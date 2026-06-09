@@ -3,7 +3,168 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI TTS 음성 변환기</title>
+  <title>AI TTS <!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏋️‍♂️ 오운완 메이트</title>
+  <style>
+    body { max-width: 600px; margin: 0 auto; padding: 20px; fontFamily: 'Segoe UI', Roboto, sans-serif; color: #333; background-color: #fdfdfd; }
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 2px solid #eaeaea; }
+    h2 { margin: 0; fontSize: '22px'; }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-name { font-size: 14px; font-weight: bold; }
+    .btn { border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .login-btn { background-color: #4285F4; color: white; }
+    .logout-btn { background-color: #fff; border: 1px solid #ccc; font-size: 12px; }
+    main { margin-top: 20px; }
+    .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #f0f0f0; }
+    .ai-card { background: #f8f9fa; border-left: 5px solid #4CAF50; display: none; }
+    .card-title { margin: 0 0 12px 0; font-size: 16px; color: #555; }
+    textarea { width: 100%; padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; resize: none; font-family: inherit; }
+    .submit-btn { width: 100%; padding: 14px; font-size: 16px; background-color: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+    .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .tts-btn { background-color: #e2e8f0; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .ai-text { line-height: 1.6; font-size: 15px; margin: 0; white-space: pre-line; }
+    .welcome-box { text-align: center; padding: 60px 20px; background: #f9f9f9; border-radius: 12px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- 상단 헤더 -->
+  <header>
+    <h2>🏋️‍♂️ 오운완 메이트</h2>
+    <div id="auth-section">
+      <button id="login-btn" class="btn login-btn">구글 로그인</button>
+      <div id="user-info" class="user-info hidden">
+        <span id="user-name" class="user-name"></span>
+        <button id="logout-btn" class="btn logout-btn">로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 -->
+  <main>
+    <!-- 로그인 전 안내 -->
+    <div id="welcome-box" class="welcome-box">
+      <p style="font-size: 18px; font-weight: bold; margin: 0 0 10px 0;">오늘도 땀 흘린 당신을 응원합니다! 💪</p>
+      <p style="color: #666; font-size: 14px; margin: 0;">AI 맞춤 코칭과 기록 관리를 위해 먼저 로그인을 해주세요.</p>
+    </div>
+
+    <!-- 로그인 후 등장할 운동 기록창 -->
+    <div id="workout-section" class="hidden">
+      <section class="card">
+        <h3 class="card-title">오늘 어떤 운동을 하셨나요?</h3>
+        <form id="workout-form">
+          <textarea id="workout-input" rows="4" placeholder="예: 오늘 자전거 30분 타고 스쿼트 50개 완료! 엄청 힘들었다."></textarea>
+          <button type="submit" id="submit-btn" class="submit-btn">오늘의 운동 기록하고 코칭 받기</button>
+        </form>
+      </section>
+
+      <!-- AI 피드백 결과창 -->
+      <section id="ai-card" class="card ai-card">
+        <div class="ai-header">
+          <h3 class="card-title">🤖 AI 트레이너 단백이의 피드백</h3>
+          <button id="tts-btn" class="tts-btn">🔊 목소리로 듣기</button>
+        </div>
+        <p id="ai-text" class="ai-text"></p>
+      </section>
+    </div>
+  </main>
+
+  <!-- 🔥 Firebase 및 기능 자바스크립트 로드 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // ⚠️ 내 Firebase 콘솔 정보로 반드시 교체하세요!
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // DOM 요소 가져오기
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
+    const userName = document.getElementById('user-name');
+    const welcomeBox = document.getElementById('welcome-box');
+    const workoutSection = document.getElementById('workout-section');
+    const workoutForm = document.getElementById('workout-form');
+    const workoutInput = document.getElementById('workout-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const aiCard = document.getElementById('ai-card');
+    const aiText = document.getElementById('ai-text');
+    const ttsBtn = document.getElementById('tts-btn');
+
+    // 1. 로그인 상태 감지 리스너
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // 로그인 성공 시 UI 전환
+        loginBtn.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        userName.innerText = `🔥 ${user.displayName}님`;
+        welcomeBox.classList.add('hidden');
+        workoutSection.classList.remove('hidden');
+      } else {
+        // 로그아웃 상태 시 UI 전환
+        loginBtn.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        welcomeBox.classList.remove('hidden');
+        workoutSection.classList.add('hidden');
+        aiCard.style.display = 'none';
+        workoutInput.value = '';
+      }
+    });
+
+    // 2. 로그인/로그아웃 이벤트 버튼
+    loginBtn.addEventListener('click', () => signInWithPopup(auth, provider).catch(err => console.log(err)));
+    logoutBtn.addEventListener('click', () => signOut(auth));
+
+    // 3. 운동 기록 제출 시 가상 AI 답변 생성
+    workoutForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = workoutInput.value.trim();
+      if (!text) return;
+
+      submitBtn.innerText = "분석 중...";
+      submitBtn.disabled = true;
+
+      // 임시 시뮬레이션 (2초 뒤 답변 생성)
+      setTimeout(() => {
+        const responseText = `오! 오늘 "${text}"을(를) 하셨군요! 정말 멋진 루틴입니다. 단백질 보충 꼭 하시고 내일도 화이팅 하세요!`;
+        aiText.innerText = responseText;
+        aiCard.style.display = 'block'; // 결과창 보여주기
+        submitBtn.innerText = "오늘의 운동 기록하고 코칭 받기";
+        submitBtn.disabled = false;
+      }, 1500);
+    });
+
+    // 4. TTS 기능 구현 (버튼 누르면 읽어줌)
+    ttsBtn.addEventListener('click', () => {
+      const textToSpeak = aiText.innerText;
+      if (!textToSpeak) return;
+
+      // 브라우저 내장 음성 합성 기능 사용
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = 'ko-KR'; // 한국어 설정
+      utterance.rate = 1.1;     // 살짝 활기찬 속도 설정
+      window.speechSynthesis.speak(utterance);
+    });
+  </script>
+</body>
+</html> 변환기</title>
   <style>
     * { box-sizing: border-box; }
 
