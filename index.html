@@ -78,8 +78,8 @@
   </div>
 
   <script>
-    // ⚠️ [필수] 본인의 Google Apps Script 배포 URL(웹 앱 URL)을 여기에 넣으세요!
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTS-n6dNxhXGHxck-BL97z9l2PPrqZbl0tqjtPIP44MVFtyOiTwizk4jva8GMuV38p/exec';
+    // ✅ 보내주신 새로운 Google Apps Script 웹 앱 URL 주소를 완벽하게 매칭했습니다!
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1zdR3hsVw8Xv0Tg02tTXCH5w_XXloYwWHpCNkS_iWcGELOP_eYaTpCfRAJjsrCh3T/exec';
 
     const fortuneForm = document.getElementById('fortune-form');
     const submitBtn = document.getElementById('submit-btn');
@@ -96,7 +96,7 @@
         aiCard.style.display = 'none';
         statusBox.textContent = '🔮 우주의 기운을 Apps Script 서버에 연결하는 중...';
 
-        // Google Apps Script 서버로 요청 보내기
+        // 서버로 운세 요청 전송
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
@@ -110,7 +110,7 @@
           throw new Error(data.error);
         }
 
-        // 결과 화면에 출력
+        // 결과 화면에 뿌려주기
         aiText.textContent = data.answer || '행운을 불러오지 못했습니다.';
         aiCard.style.display = 'block';
         statusBox.textContent = '🔮 행운 뽑기 완료!';
@@ -130,7 +130,7 @@
       submitBtn.textContent = isLoading ? '🔮 기운을 모으는 중...' : '✨ 오늘의 행운 뽑기';
     }
 
-    // TTS 기능
+    // TTS 음성 리스너
     ttsBtn.addEventListener('click', () => {
       const textToSpeak = aiText.textContent;
       if (!textToSpeak) return;
