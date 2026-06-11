@@ -24,6 +24,13 @@
     h1 { margin: 0 0 8px; text-align: center; font-size: 26px; color: #2b7a3a; }
     .subtitle { text-align: center; color: #777; margin-bottom: 24px; font-size: 14px; }
     .chat-box { display: flex; flex-direction: column; gap: 14px; }
+    
+    /* 로그인 구역 스타일 */
+    .auth-box { background: #f9f9f9; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; border: 1px solid #eee; }
+    .login-btn { background-color: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .user-info { font-weight: bold; color: #2b7a3a; display: flex; justify-content: center; align-items: center; gap: 10px; }
+    .logout-btn { background: #fff; border: 1px solid #ccc; padding: 4px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
     .submit-btn {
       width: 100%;
       padding: 16px;
@@ -53,16 +60,30 @@
     .tts-btn { background-color: #e2e8f0; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
     .ai-text { line-height: 1.8; font-size: 16px; margin: 0; white-space: pre-line; color: #444; }
     .status { min-height: 24px; color: #666; font-size: 13px; text-align: center; margin-top: 5px; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🍀 행운 메이트</h1>
-    <div class="subtitle">오늘의 행운 카드를 뽑아보세요!</div>
+    <div class="subtitle">로그인 후 오늘의 행운 카드를 뽑아보세요!</div>
+
+    <div class="auth-box">
+      <div id="login-section">
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">구글 계정으로 로그인해야 운세를 뽑을 수 있습니다.</p>
+        <button id="google-login-btn" class="login-btn">🌐 구글 계정으로 로그인</button>
+      </div>
+      <div id="user-section" class="hidden">
+        <div class="user-info">
+          <span id="user-display-name">👋 유저님 환영합니다!</span>
+          <button id="google-logout-btn" class="logout-btn">로그아웃</button>
+        </div>
+      </div>
+    </div>
 
     <div class="chat-box">
       <form id="fortune-form">
-        <button type="submit" id="submit-btn" class="submit-btn">✨ 오늘의 행운 뽑기</button>
+        <button type="submit" id="submit-btn" class="submit-btn" disabled>✨ 로그인 후 뽑기 가능</button>
       </form>
 
       <div id="status" class="status"></div>
@@ -78,8 +99,14 @@
   </div>
 
   <script>
-    // ✅ 보내주신 새로운 Google Apps Script 웹 앱 URL 주소를 완벽하게 매칭했습니다!
+    // ✅ 내 Google Apps Script 웹 앱 URL 주소
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1zdR3hsVw8Xv0Tg02tTXCH5w_XXloYwWHpCNkS_iWcGELOP_eYaTpCfRAJjsrCh3T/exec';
+
+    const loginSection = document.getElementById('login-section');
+    const userSection = document.getElementById('user-section');
+    const loginBtn = document.getElementById('google-login-btn');
+    const logoutBtn = document.getElementById('google-logout-btn');
+    const userDisplayName = document.getElementById('user-display-name');
 
     const fortuneForm = document.getElementById('fortune-form');
     const submitBtn = document.getElementById('submit-btn');
@@ -88,19 +115,72 @@
     const statusBox = document.getElementById('status');
     const ttsBtn = document.getElementById('tts-btn');
 
+    // 브라우저에 로그인 정보가 남아있는지 체크
+    let currentUser = JSON.parse(localStorage.getItem('fortune_user')) || null;
+
+    function updateAuthUI() {
+      if (currentUser) {
+        loginSection.classList.add('hidden');
+        userSection.classList.remove('hidden');
+        userDisplayName.textContent = `👋 ${currentUser.name}님`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✨ 오늘의 행운 뽑기';
+      } else {
+        loginSection.classList.remove('hidden');
+        userSection.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '✨ 로그인 후 뽑기 가능';
+        aiCard.style.display = 'none';
+      }
+    }
+
+    // 초기 UI 실행
+    updateAuthUI();
+
+    // 🌐 구글 로그인 버튼 클릭 시 (Apps Script 인증 페이지로 이동 후 복귀)
+    loginBtn.addEventListener('click', () => {
+      // Apps Script에 내 도메인 정보와 함께 로그인을 요청합니다.
+      const loginUrl = `${APPS_SCRIPT_URL}?action=login&redirect=${encodeURIComponent(window.location.href)}`;
+      window.location.href = loginUrl;
+    });
+
+    // 로그아웃 버튼 클릭 시
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('fortune_user');
+      currentUser = null;
+      updateAuthUI();
+    });
+
+    // 주소창에 구글 인증을 마치고 돌아온 데이터가 있는지 확인 처리
+    const urlParams = new URLSearchParams(window.location.search);
+    const authEmail = urlParams.get('email');
+    const authName = urlParams.get('name');
+    
+    if (authEmail && authName) {
+      currentUser = { email: authEmail, name: authName };
+      localStorage.setItem('fortune_user', JSON.stringify(currentUser));
+      // 주소창 깔끔하게 청소
+      window.history.replaceState({}, document.title, window.location.pathname);
+      updateAuthUI();
+    }
+
+    // [오늘의 행운 뽑기] 버튼 클릭 시 작동
     fortuneForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!currentUser) return;
 
       try {
         setLoading(true);
         aiCard.style.display = 'none';
-        statusBox.textContent = '🔮 우주의 기운을 Apps Script 서버에 연결하는 중...';
+        statusBox.textContent = '🔮 로그인 정보를 검증하고 운세를 가져오는 중...';
 
-        // 서버로 운세 요청 전송
+        // 서버로 유저 정보와 함께 운세 요청 전송
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
-            question: "내 오늘의 행운 카드를 뽑아줘!"
+            question: "내 오늘의 행운 카드를 뽑아줘!",
+            userEmail: currentUser.email,
+            userName: currentUser.name
           })
         });
 
@@ -110,7 +190,6 @@
           throw new Error(data.error);
         }
 
-        // 결과 화면에 뿌려주기
         aiText.textContent = data.answer || '행운을 불러오지 못했습니다.';
         aiCard.style.display = 'block';
         statusBox.textContent = '🔮 행운 뽑기 완료!';
@@ -130,7 +209,7 @@
       submitBtn.textContent = isLoading ? '🔮 기운을 모으는 중...' : '✨ 오늘의 행운 뽑기';
     }
 
-    // TTS 음성 리스너
+    // TTS 기능
     ttsBtn.addEventListener('click', () => {
       const textToSpeak = aiText.textContent;
       if (!textToSpeak) return;
