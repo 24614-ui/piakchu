@@ -24,7 +24,7 @@
     h1 { margin: 0 0 8px; text-align: center; font-size: 26px; color: #2b7a3a; }
     .subtitle { text-align: center; color: #777; margin-bottom: 24px; font-size: 14px; }
     
-    /* ✍️ 이름 입력 상자 스타일 */
+    /* ✍️ 닉네임 입력 상자 스타일 */
     .name-box { background: #f9f9f9; padding: 18px; border-radius: 16px; text-align: left; margin-bottom: 20px; border: 1px solid #edf1f5; }
     .name-input { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; }
     .name-input:focus { border-color: #4CAF50; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15); }
@@ -43,7 +43,7 @@
       transition: 0.15s;
     }
     .submit-btn:hover { transform: translateY(-2px); background-color: #43a047; }
-    .submit-btn:disabled { cursor: not-allowed; opacity: 0.6; transform: none; }
+    .submit-btn:disabled { cursor: not-allowed; opacity: 0.6; transform: none; background-color: #cccccc; }
     
     .ai-card {
       background: #fbf7ff;
@@ -64,11 +64,11 @@
 <body>
   <div class="container">
     <h1>🍀 행운 메이트</h1>
-    <div class="subtitle">이름을 입력하고 오늘의 행운 카드를 뽑아보세요!</div>
+    <div class="subtitle">닉네임을 입력하고 오늘의 행운 카드를 뽑아보세요!</div>
 
     <div class="name-box">
-      <label style="font-size: 14px; font-weight: bold; color: #555;">👤 당신의 이름을 알려주세요</label>
-      <input type="text" id="user-name-input" class="name-input" placeholder="이름 또는 닉네임을 입력하세요">
+      <label style="font-size: 14px; font-weight: bold; color: #555;">👤 당신의 닉네임을 알려주세요</label>
+      <input type="text" id="user-name-input" class="name-input" placeholder="닉네임을 입력하세요 (예: 홍길동)">
     </div>
 
     <div class="chat-box">
@@ -89,7 +89,7 @@
   </div>
 
   <script>
-    // ✅ 내 Google Apps Script 웹 앱 URL 주소
+    // ⚠️ [중요] 방금 구글 앱스 스크립트에서 [새 배포]로 발급받은 실제 URL 주소를 이곳에 꼭 붙여넣으세요!
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1zdR3hsVw8Xv0Tg02tTXCH5w_XXloYwWHpCNkS_iWcGELOP_eYaTpCfRAJjsrCh3T/exec';
 
     const userNameInput = document.getElementById('user-name-input');
@@ -100,41 +100,27 @@
     const statusBox = document.getElementById('status');
     const ttsBtn = document.getElementById('tts-btn');
 
-    // 예전에 입력한 이름이 브라우저에 남아있으면 자동으로 채워줌
+    // 이전에 입력했던 닉네임이 브라우저에 기억되어 있다면 자동으로 채워줍니다.
     if (localStorage.getItem('fortune_user_name')) {
       userNameInput.value = localStorage.getItem('fortune_user_name');
     }
 
-    // [오늘의 행운 뽑기] 클릭 시 작동
+    // [오늘의 행운 뽑기] 버튼 클릭 시 작동
     fortuneForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const userName = userNameInput.value.trim();
       if (!userName) {
-        alert("⚠️ 이름을 먼저 입력해 주세요!");
+        alert("⚠️ 닉네임을 먼저 입력해 주세요!");
         return;
       }
 
-      // 이름 기억하기
+      // 브라우저 쿠키(로컬스토리지)에 닉네임 저장
       localStorage.setItem('fortune_user_name', userName);
 
       try {
         setLoading(true);
         aiCard.style.display = 'none';
-        statusBox.textContent = `🔮 ${userName}님의 기운을 담아 운세를 뽑는 중...`;
+        statusBox.textContent = `🔮 ${userName}님의 기운을 모아 구글 서버에 연결 중...`;
 
-        // Apps Script 서버로 이름과 함께 운세 요청 전송
-        const response = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            question: "내 오늘의 행운 카드를 뽑아줘!",
-            userEmail: "N/A", // 구글 로그인 대신 입력형이므로 이메일은 비워둠
-            userName: userName
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
+        //
