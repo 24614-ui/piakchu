@@ -24,7 +24,6 @@
     h1 { margin: 0 0 8px; text-align: center; font-size: 26px; color: #2b7a3a; }
     .subtitle { text-align: center; color: #777; margin-bottom: 24px; font-size: 14px; }
     
-    /* 🔐 Firebase 로그인 구역 스타일 */
     .auth-box { background: #f9f9f9; padding: 18px; border-radius: 16px; text-align: center; margin-bottom: 20px; border: 1px solid #edf1f5; }
     .login-btn { background-color: #4285F4; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: background 0.2s; }
     .login-btn:hover { background-color: #357ae8; }
@@ -54,7 +53,6 @@
       padding: 20px;
       border-radius: 16px;
       border: 1px solid #edf1f5;
-      border-left: 5px solid #9C27B0;
       display: none;
     }
     .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #e0e0e0; padding-bottom: 10px; }
@@ -102,10 +100,9 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, setPersistence, browserSessionPersistence, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 🔴 알려주신 본인의 실제 Firebase API 정보 완벽 적용
     const firebaseConfig = {
       apiKey: "AIzaSyB88s6hnGZ08Gbe5NjX3buylytyPznSUY4",
       authDomain: "test-47ff6.firebaseapp.com",
@@ -117,16 +114,13 @@
       measurementId: "G-605D2EZ8TW"
     };
 
-    // ⚠️ [주소 확인] 내 OpenAI 전송용 구글 앱스 스크립트 주소
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1zdR3hsVw8Xv0Tg02tTXCH5w_XXloYwWHpCNkS_iWcGELOP_eYaTpCfRAJjsrCh3T/exec';
 
-    // Firebase 가동
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    // DOM 노드 연결
     const loginSection = document.getElementById('login-section');
     const userSection = document.getElementById('user-section');
     const loginBtn = document.getElementById('firebase-login-btn');
@@ -141,7 +135,19 @@
 
     let globalUser = null;
 
-    // 1. 🌟 로그인 상태 실시간 변화 추적 감지기
+    // [수정] 페이지 로드 즉시 리다이렉트 로그인 결과부터 안전하게 가로채기
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          statusBox.textContent = "구글 인증 성공!";
+        }
+      })
+      .catch((error) => {
+        console.error("인증 처리 에러:", error);
+        statusBox.textContent = "로그인 인증 오류: " + error.message;
+      });
+
+    // 로그인 상태 실시간 감지 리스너
     onAuthStateChanged(auth, (user) => {
       if (user) {
         globalUser = user;
@@ -160,32 +166,25 @@
       }
     });
 
-    // 2. 🔐 버그 없는 리다이렉트 기반 로그인 트리거
+    // [수정] 세션 지속성을 강제로 주입하여 로그인 튕김 현상 방지
     loginBtn.addEventListener('click', () => {
-      statusBox.textContent = "구글 로그인 페이지로 안전하게 이동 중...";
-      signInWithRedirect(auth, provider);
+      statusBox.textContent = "구글 로그인 페이지로 이동 중...";
+      setPersistence(auth, browserSessionPersistence)
+        .then(() => {
+          return signInWithRedirect(auth, provider);
+        })
+        .catch((error) => {
+          console.error("세션 설정 실패:", error);
+          statusBox.textContent = "세션 설정 실패: " + error.message;
+        });
     });
 
-    // 로그아웃 처리
     logoutBtn.addEventListener('click', () => {
       signOut(auth).then(() => { 
-        statusBox.textContent = "안전하게 로그아웃 되었습니다."; 
+        statusBox.textContent = "로그아웃 되었습니다."; 
       });
     });
 
-    // 구글 로그인을 마친 후 페이지가 복귀했을 때 결과 수신 처리 (알잘딱 내부 처리)
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result && result.user) {
-          statusBox.textContent = "인증 완료! 반가워요.";
-        }
-      })
-      .catch((error) => {
-        console.error("인증 에러:", error);
-        statusBox.textContent = "로그인 도중 에러가 발생했습니다: " + error.message;
-      });
-
-    // 3. 운세 버튼 클릭 시 구글 서버 경유 후 Realtime DB 다이렉트 보관
     fortuneForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!globalUser) return;
@@ -195,7 +194,6 @@
         aiCard.style.display = 'none';
         statusBox.textContent = '🔮 AI 점술가 럭키가 우주의 기운을 모으는 중...';
 
-        // 구글 서버로 단순 퀘스천 전송 (OpenAI 결과 반환용)
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({ question: "내 오늘의 행운 카드를 뽑아줘!" })
@@ -208,11 +206,10 @@
         aiText.textContent = answerText;
         aiCard.style.display = 'block';
 
-        // 💾 [실시간 저장] Firebase Realtime Database 'fortunes' 경로에 유저 정보와 결과 타격
         statusBox.textContent = '💾 Realtime Database에 운세 내역 기록 중...';
         
         const fortunesRef = ref(database, 'fortunes');
-        const newRecordRef = push(fortunesRef); // 유니크 키 자동생성
+        const newRecordRef = push(fortunesRef);
         
         await set(newRecordRef, {
           uid: globalUser.uid,
@@ -226,7 +223,7 @@
 
       } catch (error) {
         console.error(error);
-        aiText.textContent = '우주의 주파수가 불안정합니다.\n원인: ' + error.message;
+        aiText.textContent = '문제가 발생했습니다.\n원인: ' + error.message;
         aiCard.style.display = 'block';
         statusBox.textContent = '요청 실패';
       } finally {
@@ -239,14 +236,11 @@
       submitBtn.textContent = isLoading ? '🔮 기운을 모으는 중...' : '✨ 오늘의 행운 뽑기';
     }
 
-    // TTS 오디오 출력 기능
     ttsBtn.addEventListener('click', () => {
       const textToSpeak = aiText.textContent;
       if (!textToSpeak) return;
-
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'ko-KR';
-      utterance.rate = 1.0;
       window.speechSynthesis.speak(utterance);
     });
   </script>
