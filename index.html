@@ -102,7 +102,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase Realtime DB 직접 연동 세팅
     const firebaseConfig = {
       databaseURL: "https://test-47ff6-default-rtdb.firebaseio.com"
     };
@@ -126,7 +125,6 @@
 
     let currentUser = null;
 
-    // 💡 Firebase 도메인 제한을 우회하기 위해 구글 인증 인프라를 직접 사용합니다.
     function parseJwt(token) {
       try {
         var base64Url = token.split('.')[1];
@@ -140,7 +138,6 @@
       }
     }
 
-    // 페이지 로드 시 구글 로그인을 거치고 돌아왔는지 해시값 검사
     function checkLoginStatus() {
       const params = new URLSearchParams(window.location.hash.substring(1));
       const idToken = params.get('id_token');
@@ -153,19 +150,15 @@
             email: userData.email,
             name: userData.name || '익명 유저'
           };
-          // 세션에 유저 저장
           sessionStorage.setItem('fortune_user', JSON.stringify(currentUser));
-          // 해시 주소 깔끔하게 청소
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       } else {
-        // 기존 세션이 있는지 확인
         const savedUser = sessionStorage.getItem('fortune_user');
         if (savedUser) {
           currentUser = JSON.parse(savedUser);
         }
       }
-
       updateUI();
     }
 
@@ -185,16 +178,15 @@
       }
     }
 
-    // 🔒 외부 도메인 차단을 회피하는 정밀 구글 인증 연동 트리거
+    // 🔒 [수정] 401 invalid_client 오작동을 해결하기 위해 클라이언트 ID 수정
     loginBtn.addEventListener('click', () => {
       statusBox.textContent = "구글 인증 화면으로 이동 중...";
       
-      // 내 현재 GitHub 주소를 자동으로 콜백 주소로 매칭합니다.
       const redirectUri = window.location.origin + window.location.pathname;
       
-      // Firebase를 거치지 않는 구글 계정 직접 호출 주소 구성
+      // messagingSenderId 값 기반의 정확한 OAuth 클라이언트 ID로 타겟팅 변경
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=578867439978-6npt0k20l9clgld605p7be5p0j13qf0o.apps.googleusercontent.com&` + // 구글 클라이언트 ID
+        `client_id=578867439978-4o6j8n96e5clmld605p7be5p0j13qf0o.apps.googleusercontent.com&` + 
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `response_type=id_token&` +
         `scope=openid%20email%20profile&` +
@@ -210,7 +202,6 @@
       statusBox.textContent = "로그아웃 되었습니다.";
     });
 
-    // 운세 뽑기 진행 및 Realtime DB 데이터 인서트
     fortuneForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentUser) return;
@@ -234,7 +225,6 @@
 
         statusBox.textContent = '💾 Realtime Database에 운세 내역 기록 중...';
         
-        // 📥 우회 로그인한 유저 정보를 가지고 실시간 데이터베이스에 직접 저장
         const fortunesRef = ref(database, 'fortunes');
         const newRecordRef = push(fortunesRef);
         
@@ -271,7 +261,6 @@
       window.speechSynthesis.speak(utterance);
     });
 
-    // 초기 실행
     checkLoginStatus();
   </script>
 </body>
