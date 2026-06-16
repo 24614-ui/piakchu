@@ -24,7 +24,6 @@
     h1 { margin: 0 0 8px; text-align: center; font-size: 26px; color: #2b7a3a; }
     .subtitle { text-align: center; color: #777; margin-bottom: 24px; font-size: 14px; }
     
-    /* 🔐 이메일 로그인/회원가입 구역 스타일 */
     .auth-box { background: #f9f9f9; padding: 18px; border-radius: 16px; text-align: left; margin-bottom: 20px; border: 1px solid #edf1f5; }
     .auth-input { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
     .auth-input:focus { border-color: #4CAF50; }
@@ -91,8 +90,8 @@
       <div id="user-section" class="hidden">
         <div class="user-info">
           <div>
-            <span id="user-display-email" style="display:block; font-size:15px;">👋 이메일 유저님 환영합니다!</span>
-            <span style="display:block; font-size:12px; color:#666; font-weight:normal;">Firebase Authentication 연동 완료</span>
+            <span id="user-display-email" style="display:block; font-size:15px;">👋 환영합니다!</span>
+            <span style="display:block; font-size:12px; color:#666; font-weight:normal;">새 Firebase Auth 연동 완료</span>
           </div>
           <button id="email-logout-btn" class="logout-btn">로그아웃</button>
         </div>
@@ -121,16 +120,16 @@
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 🎯 제공해주신 완벽한 파이어베이스 키셋 전원 배치 완료
+    // 🎯 [완벽 반영] 새로 열어주신 Firebase 프로젝트 API 정보 세팅 완료
     const firebaseConfig = {
-      apiKey: "AIzaSyB88s6hnGZ08Gbe5NjX3buylytyPznSUY4",
-      authDomain: "test-47ff6.firebaseapp.com",
-      databaseURL: "https://test-47ff6-default-rtdb.firebaseio.com",
-      projectId: "test-47ff6",
-      storageBucket: "test-47ff6.firebasestorage.app",
-      messagingSenderId: "578867439978",
-      appId: "1:578867439978:web:b367473cc4d0cfced3dd13",
-      measurementId: "G-605D2EZ8TW"
+      apiKey: "AIzaSyCHKrZSVJ8Tp_ZtDaICi_DTTed6Inaehss",
+      authDomain: "eeeeeeeeee-d5734.firebaseapp.com",
+      databaseURL: "https://eeeeeeeeee-d5734-default-rtdb.firebaseio.com",
+      projectId: "eeeeeeeeee-d5734",
+      storageBucket: "eeeeeeeeee-d5734.firebasestorage.app",
+      messagingSenderId: "535043657946",
+      appId: "1:535043657946:web:6c00314077c625f81415e3",
+      measurementId: "G-N2V2X59Q1K"
     };
 
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1zdR3hsVw8Xv0Tg02tTXCH5w_XXloYwWHpCNkS_iWcGELOP_eYaTpCfRAJjsrCh3T/exec';
@@ -156,7 +155,7 @@
 
     let globalUser = null;
 
-    // 1. 🌟 Firebase Auth 실시간 로그인 상태 감지 엔진
+    // 1. Firebase Auth 실시간 로그인 상태 변화 감지
     onAuthStateChanged(auth, (user) => {
       if (user) {
         globalUser = user;
@@ -175,7 +174,7 @@
       }
     });
 
-    // 2. 📝 이메일 회원가입 기능 추가
+    // 2. 이메일 회원가입 기능
     registerBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
       const password = passwordInput.value;
@@ -183,7 +182,7 @@
       if(!email || !password) return alert("이메일과 비밀번호를 입력해주세요.");
       
       try {
-        statusBox.textContent = "가입 승인 요청 중...";
+        statusBox.textContent = "가입 요청을 전송 중...";
         await createUserWithEmailAndPassword(auth, email, password);
         statusBox.textContent = "회원가입 및 로그인 성공!";
       } catch (error) {
@@ -193,7 +192,7 @@
       }
     });
 
-    // 3. 🔑 이메일 로그인 기능 추가
+    // 3. 이메일 로그인 기능
     loginBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
       const password = passwordInput.value;
@@ -201,7 +200,7 @@
       if(!email || !password) return alert("이메일과 비밀번호를 입력해주세요.");
 
       try {
-        statusBox.textContent = "인증 자격 검증 중...";
+        statusBox.textContent = "인증 정보를 대조 중...";
         await signInWithEmailAndPassword(auth, email, password);
         statusBox.textContent = "로그인 성공!";
       } catch (error) {
@@ -211,14 +210,14 @@
       }
     });
 
-    // 로그아웃
+    // 로그아웃 기능
     logoutBtn.addEventListener('click', () => {
       signOut(auth).then(() => {
         statusBox.textContent = "로그아웃 되었습니다.";
       });
     });
 
-    // 4. 🔮 운세 뽑기 실행 (💥 에러 발생 시에도 무조건 DB 강제 백업 기록 탑재)
+    // 4. 운세 요청 및 Realtime DB 백업 강제 저장 시스템
     fortuneForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!globalUser) return;
@@ -231,7 +230,6 @@
         aiCard.style.display = 'none';
         statusBox.textContent = '🔮 AI 점술가 럭키가 우주의 기운을 모으는 중...';
 
-        // OpenAI 트리거 전송
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({ 
@@ -244,25 +242,22 @@
         if (data.error) throw new Error(data.error);
 
         finalFortuneResult = data.answer || data.result;
-        if (!finalFortuneResult) throw new Error("서버에서 온 답변 공백 오류");
+        if (!finalFortuneResult) throw new Error("답변 파싱 데이터 공백 에러");
 
-        // 정상 출력
         aiText.textContent = finalFortuneResult;
         aiCard.style.display = 'block';
-        statusBox.textContent = '💾 Realtime Database에 운세 결과 자동 기록 중...';
+        statusBox.textContent = '💾 Realtime Database에 결과 기록 중...';
 
       } catch (error) {
-        // 💥 에러 핸들링 필터 가동: 통신 오류나 GPT가 뻗어도 작동 유지!
         isSuccess = false;
-        console.error("비상 에러 포착:", error);
+        console.error("비상 상황 에러 캐치:", error);
         
-        // 유저에게는 친절히 에러를 보여주고
-        finalFortuneResult = `[시스템 에러 발생] 우주의 주파수가 불안정합니다.\n원인 요약: ${error.message}`;
+        finalFortuneResult = `[시스템 안내] AI 연동 중 주파수가 꼬였습니다.\n원인 코드: ${error.message}`;
         aiText.textContent = finalFortuneResult;
         aiCard.style.display = 'block';
-        statusBox.textContent = '요청 중 문제 발생 (에러 상태 전송 중)';
+        statusBox.textContent = '요청 실패 (에러 코드를 DB에 자동 백업합니다)';
       } finally {
-        // 📥 [핵심] 성공/실패 여부를 떠나 Realtime Database에 무조건 강제 Insert 진행!
+        // 어떠한 에러가 나더라도 새 프로젝트 Realtime DB에 무조건 백업 로그 인서트
         try {
           const fortunesRef = ref(database, 'fortunes');
           const newRecordRef = push(fortunesRef);
@@ -270,19 +265,19 @@
           await set(newRecordRef, {
             uid: globalUser.uid,
             email: globalUser.email,
-            fortuneResult: finalFortuneResult, // 정상 운세 내용 혹은 에러 코드가 그대로 저장됨
+            fortuneResult: finalFortuneResult, 
             status: isSuccess ? "SUCCESS" : "ERROR_BACKUP", 
             createdAt: new Date().toLocaleString()
           });
 
           if (isSuccess) {
-            statusBox.textContent = '🔮 운세 뽑기 및 Realtime DB 저장 완료!';
+            statusBox.textContent = '🔮 오늘의 행운 뽑기 및 새 Realtime DB 저장 완료!';
           } else {
-            statusBox.textContent = '⚠️ 운세 요청은 실패했으나 에러 내역이 DB에 백업되었습니다.';
+            statusBox.textContent = '⚠️ 운세 요청은 실패했으나 에러 기록이 DB에 무사히 백업되었습니다.';
           }
         } catch (dbError) {
-          console.error("DB 자체 저장 에러:", dbError);
-          statusBox.textContent = '데이터베이스 트래픽 초과 저장 실패';
+          console.error("DB 기록 실패:", dbError);
+          statusBox.textContent = '데이터베이스 액세스 권한 혹은 트래픽 오류';
         }
         setLoading(false);
       }
@@ -300,8 +295,6 @@
       utterance.lang = 'ko-KR';
       window.speechSynthesis.speak(utterance);
     });
-
-    checkLoginStatus();
   </script>
 </body>
 </html>
